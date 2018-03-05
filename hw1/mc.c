@@ -4,8 +4,8 @@
 #include<math.h>
 #include <time.h>
 
-#define COUNT 100
-#define NUM_POINTS 100000
+#define COUNT 1
+#define NUM_POINTS 10000
 
 int main(int argc, char **argv){
     double dx = M_PI/(NUM_POINTS-1);
@@ -13,16 +13,19 @@ int main(int argc, char **argv){
     clock_t begin = clock();
     double x, integral = 0;
 
-    for(int count=0; count<COUNT; count++){
+  //  for(int count=0; count<COUNT; count++){
         integral = 0;
-        #pragma omp parallel for reduction(+:integral)
-        for(int i=0; i<=NUM_POINTS; i++){
+        int myid=0;
+
+        //#pragma omp parallel for schedule(dynamic,1250) reduction(+:integral) private(myid)
+        for(int i=0; i<NUM_POINTS; i++){
             x = rand()*M_PI/(float)RAND_MAX;
             integral += sin(x);
-            //printf("%f\n",x);
+            //myid = omp_get_thread_num();
+            //printf("%f \t %d\n",x,myid);
         }
         integral = integral*M_PI/NUM_POINTS;
-    }
+    //}
     
     clock_t end = clock();
 
