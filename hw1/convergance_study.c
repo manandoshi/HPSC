@@ -8,7 +8,7 @@ int main(int argc, char** argv){
         
         int num_points=2;
         
-        for(int j=0; j<18; j++){
+        for(int j=0; j<20; j++){
             num_points = num_points*2;
             printf("%c, %.6f, %d\n",methods[i_method],
                     integral(num_points, methods[i_method]),

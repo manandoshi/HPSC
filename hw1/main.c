@@ -43,19 +43,19 @@ int main(int argc, char **argv){
         clock_t end = clock();
         double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
         double avg_time   = time_spent/num_iters;
-        printf("Trapezoidal, %.6f, %d, %d, %.6f, %.6f\n", integral, num_threads, num_iters,time_spent,avg_time);
+        printf("Trapezoidal, %.6f, %d, %d, %.9f, %.9f\n", integral, num_threads, num_iters,time_spent,avg_time);
     }
     else if(argv[1][0]=='M'){
         clock_t begin = clock();
 
         for(int count=0; count<num_iters; count++){
-            integral = trapezoidal(num_points, dx);
+            integral = mc(num_points);
         }
 
         clock_t end = clock();
         double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
         double avg_time   = time_spent/num_iters;
-        printf("Monte-Carlo, %.6f, %d, %d, %.6f, %.6f\n", integral, num_threads, num_iters,time_spent,avg_time);
+        printf("Monte-Carlo, %.6f, %d, %d, %.9f, %.9f\n", integral, num_threads, num_iters,time_spent,avg_time);
     }
 
     return 0;

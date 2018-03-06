@@ -9,8 +9,8 @@ int main(int argc, char** argv){
     
     for(int i_method = 0; i_method<2; i_method++){
 
-        int num_points=10000;
-        for(int num_threads=1; num_threads<=6; num_threads++){
+        int num_points=100000;
+        for(int num_threads=4; num_threads<=4; num_threads++){
             omp_set_num_threads(num_threads);
             num_points = num_points*2;
             
