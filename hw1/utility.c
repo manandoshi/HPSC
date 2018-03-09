@@ -14,7 +14,7 @@ double trapezoidal(int num_points){
 
 double mc(int num_points){
     double x, integral = 0;
-    #pragma omp parallel for reduction(+:integral)
+    #pragma omp parallel for private(x) reduction(+:integral)
     for(int i = 0; i<num_points; i++){
         x = rand()*M_PI/(float)RAND_MAX;
         integral += sin(x);

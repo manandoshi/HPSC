@@ -1,0 +1,32 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\title{Assignment 1: HPSC}
+\author{Manan Doshi}
+\date{5 March 2018}
+\usepackage{graphicx}
+
+\begin{document}
+\graphicspath{{/}}
+\maketitle
+
+\section{Convergence Study}
+The following plots show the absolute error of both the methods with increasing number of points. It can be clearly seen that both the methods converge to the actual value of the integral(2.00). The Monte Carlo method is more `erratic' in it's convergence because of the stochasticity involved.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.5]{conv}
+\end{figure}
+
+\newpage
+\section{Timing Study}
+
+Following are the log-log plots of the time taken for the code to run using various number of threads (Number of points = $10000$). It can be clearly seen that, for the trapezoidal rule, the time take decreases with the increase in the number of threads till 4 threads and then massively increases. The reason for this is that the machine has just $4$ processors and beyond that, the threads ave to be run on the same processor. The overhead due to scheduling and parallelizing substantially increase the time taken for the code to run.
+
+The Monte Carlo method, on the other hand slows down with threading. This can perhaps be attributed to the generation of random numbers. Random numbers are generated using a pseudo random number generator, which, given a seed produces an array of random numbers sequentially. Every time a thread queries for a random number, it is probably computed in a serial fashion using the PRNG. Thus the code essentially remains serial and an increase in threads increases the time taken due to the overhead. 
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.6]{timing}
+\end{figure}
+
+\end{document}

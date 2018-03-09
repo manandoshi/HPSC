@@ -16,7 +16,7 @@ do
     counter=1
     while [ $counter -le 100 ]
     do
-        ./main 'T' 1 10000 $i >> timing_trap.csv
+        ./main 'T' 1 100000 $i >> timing_trap.csv
         ((counter++))
     done
 done
@@ -26,7 +26,7 @@ do
     counter=1
     while [ $counter -le 100 ]
     do
-        ./main 'M' 1 10000 $i >> timing_mc.csv
+        ./main 'M' 1 100000 $i >> timing_mc.csv
         ((counter++))
     done
 done
