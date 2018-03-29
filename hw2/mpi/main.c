@@ -47,7 +47,9 @@ int main(int argc, char** argv){
             }
             clock_t end = clock();
             double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
-            printf("Trapezoidal, %.6f,%d, 1,%.9f,%.9f\n",integral, world_size, time_spent, time_spent);
+            //double error = abs(2.0-integral);
+            double error = integral > 2.0 ? integral - 2.0 : 2.0 - integral;
+            printf("Trapezoidal, %.9f, %.9f,%d, %d,%.9f\n",error, integral, world_size, num_points, time_spent);
         }
         else{
             MPI_Send( &integral, 1, MPI_DOUBLE, 0,world_rank, MPI_COMM_WORLD);
@@ -76,7 +78,8 @@ int main(int argc, char** argv){
             }
             clock_t end = clock();
             double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
-            printf("Monte-Carlo, %.6f,%d, 1,%.9f,%.9f\n",integral, world_size, time_spent, time_spent);
+            double error = integral > 2.0 ? integral - 2.0 : 2.0 - integral;
+            printf("Monte-Carlo, %.9f, %.9f,%d, %d,%.9f\n",error, integral, world_size, num_points, time_spent);
         }
         else{
             MPI_Send( &integral, 1, MPI_DOUBLE, 0,world_rank, MPI_COMM_WORLD);
