@@ -7,6 +7,7 @@
 
 #define TPB 512
 
+/** Need to use this function instead of atomicAdd for double precision. Computation done in single precision(float) for now**/
 __device__ double atomicAdd_double(double* address, double val)
 {
     unsigned long long int* address_as_ull =
@@ -22,53 +23,75 @@ __device__ double atomicAdd_double(double* address, double val)
 }
 
 
-__global__ void trap(double *out, int N) {
+__global__ void trap(float *out, int N) {
     int index = threadIdx.x + blockIdx.x*blockDim.x;
     if(index>=N){
         return;
     }
-    __shared__ double temp[TPB];
+    __shared__ float temp[TPB];
 
-    temp[index] = sin(M_PI*(double)index/((double)N-1));
+    temp[threadIdx.x] = sin(M_PI*(float)index/((float)N-1));
 
     __syncthreads();
     if(threadIdx.x == 0){
-        double sum = 0;
-        for(int i = index; i< min(N,index+TPB); i++){
-            sum += temp[i];
+        float sum = 0;
+        for(int i = index; i<min(N,TPB); i++){
+            sum += temp[i-index];
         }
-        atomicAdd_double(out, sum);
+        atomicAdd(out, sum);
     }
     return;
 }
 
 
+__global__ void markov(float *out, int N) {
+
+    int index = threadIdx.x + blockIdx.x*blockDim.x;
+
+    if(index>=N){
+        return;
+    }
+
+    curandState_t state;
+    curand_init(0,
+                index,
+                0,
+                &state);
+
+    __shared__ float temp[TPB];
+    temp[index] = sin(curand_uniform(&state)*M_PI);
+
+    __syncthreads();
+
+    if(threadIdx.x == 0){
+        float sum = 0;
+        for(int i = index; i< min(N,index+TPB); i++){
+            sum += temp[i]/N;
+        }
+        atomicAdd(out, sum);
+    }
+    return;
+}
 
 int main(int argc, char** argv){
 
     int num_points = atoi(argv[2]);
-
-    int num_blocks = num_points/TPB + 1;
-
+    int num_blocks = (num_points+TPB-1)/TPB;
 
     if(argv[1][0]=='T'){
         clock_t begin = clock();
 
-        double integral;
-        double* d_integral;
-        int* d_N;
+        float integral = 1;
+        float* d_integral;
 
-        cudaMalloc((void**)&d_integral, sizeof(double));
-        
-        cudaMemcpy(d_N, &num_points, sizeof(int), cudaMemcpyHostToDevice);
-
+        cudaMalloc((void**)&d_integral, sizeof(float));
         trap<<<num_blocks,TPB>>>(d_integral, num_points);
 
-        cudaMemcpy(&integral, d_integral, sizeof(double), cudaMemcpyDeviceToHost);
+        cudaMemcpy(d_integral, &integral, sizeof(float), cudaMemcpyDeviceToHost);
 
         clock_t end = clock();
         double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
-        double error = integral > 2.0 ? integral - 2.0 : 2.0 - integral;
+        float error = integral > 2.0 ? integral - 2.0 : 2.0 - integral;
 
         printf("Trapezoidal, %.9f, %.9f,%d, %d,%.9f\n",error, integral, num_blocks, num_points, time_spent);
     }
