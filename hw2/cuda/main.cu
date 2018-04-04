@@ -2,6 +2,8 @@
 #include<stdio.h>
 #include<math.h>
 #include<time.h>
+#include <curand.h>
+#include <curand_kernel.h>
 
 #define TPB 512
 
