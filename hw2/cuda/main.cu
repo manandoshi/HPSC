@@ -22,52 +22,63 @@ __device__ double atomicAdd_double(double* address, double val)
     return __longlong_as_double(old);
 }
 
-
 __global__ void trap(float *out, int N) {
-    int index = threadIdx.x + blockIdx.x*blockDim.x;
-    if(index>=N){
-        return;
-    }
+
     __shared__ float temp[TPB];
 
-    temp[threadIdx.x] = sin(M_PI*(float)index/((float)N-1));
+    temp[threadIdx.x] = 0;
+
+    int index = threadIdx.x + blockIdx.x*blockDim.x;
+
+    if(index>=N){
+    }
+    else{
+        temp[threadIdx.x] = sin(M_PI*(float)index/((float)N-1));
+    }
 
     __syncthreads();
+
     if(threadIdx.x == 0){
         float sum = 0;
-        for(int i = index; i<min(N,TPB); i++){
-            sum += temp[i-index];
+
+        for(int i = 0; i<TPB; i++){
+            sum += temp[i];
         }
+
+        sum = sum*M_PI/(N-1);
         atomicAdd(out, sum);
     }
     return;
 }
 
+__global__ void mc(float *out, int N) {
 
-__global__ void markov(float *out, int N) {
+    __shared__ float temp[TPB];
+
+    temp[threadIdx.x] = 0;
 
     int index = threadIdx.x + blockIdx.x*blockDim.x;
 
     if(index>=N){
-        return;
     }
+    else{
+        curandState_t state;
+        curand_init(blockIdx.x,
+                    threadIdx.x,
+                    0,
+                    &state);
 
-    curandState_t state;
-    curand_init(0,
-                index,
-                0,
-                &state);
-
-    __shared__ float temp[TPB];
-    temp[index] = sin(curand_uniform(&state)*M_PI);
+        temp[threadIdx.x] = sin(curand_uniform(&state)*M_PI);
+    }
 
     __syncthreads();
 
     if(threadIdx.x == 0){
         float sum = 0;
-        for(int i = index; i< min(N,index+TPB); i++){
-            sum += temp[i]/N;
+        for(int i = 0; i<TPB; i++){
+            sum += temp[i];
         }
+        sum = sum*M_PI/N;
         atomicAdd(out, sum);
     }
     return;
@@ -81,50 +92,47 @@ int main(int argc, char** argv){
     if(argv[1][0]=='T'){
         clock_t begin = clock();
 
-        float integral = 1;
+        float* integral;
         float* d_integral;
 
         cudaMalloc((void**)&d_integral, sizeof(float));
+        integral = (float *)malloc(sizeof(float));
+
         trap<<<num_blocks,TPB>>>(d_integral, num_points);
 
-        cudaMemcpy(d_integral, &integral, sizeof(float), cudaMemcpyDeviceToHost);
-
+        cudaMemcpy(integral, d_integral, sizeof(float), cudaMemcpyDeviceToHost);
+        
         clock_t end = clock();
         double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
-        float error = integral > 2.0 ? integral - 2.0 : 2.0 - integral;
-
-        printf("Trapezoidal, %.9f, %.9f,%d, %d,%.9f\n",error, integral, num_blocks, num_points, time_spent);
+        float error = *integral > 2.0 ? *integral - 2.0 : 2.0 - *integral;
+        
+        printf("Trapezoidal, %.9f, %.9f,%d, %d,%.9f\n",error, *integral, num_blocks, num_points, time_spent);
+        
+        free(integral);
+        cudaFree(d_integral);
     }
-    /*
+
     else if(argv[1][0]=='M'){
-        srand(time(NULL) + world_rank);
         clock_t begin = clock();
-        double integral = 0;
-        for(int i=np*world_rank;i<np*(world_rank+1); i++){
-            double x = rand()*M_PI/(double)RAND_MAX;
-            integral += sin(x);
-        }
-        integral = integral*M_PI/num_points;
-        //printf("Processor %d reporting: integral = %f \n",world_rank,integral);
 
-        MPI_Status status;
-        if(world_rank == 0){
-            for(int i=1; i<world_size;i++){
-                double other_integral;
-                MPI_Recv( &other_integral, 1, MPI_DOUBLE, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-                integral+= other_integral;
-            }
-            clock_t end = clock();
-            double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
-            double error = integral > 2.0 ? integral - 2.0 : 2.0 - integral;
-            printf("Monte-Carlo, %.9f, %.9f,%d, %d,%.9f\n",error, integral, world_size, num_points, time_spent);
-        }
-        else{
-            MPI_Send( &integral, 1, MPI_DOUBLE, 0,world_rank, MPI_COMM_WORLD);
-        }
+        float* integral;
+        float* d_integral;
 
-        MPI_Finalize();
+        cudaMalloc((void**)&d_integral, sizeof(float));
+        integral = (float *)malloc(sizeof(float));
+
+        mc<<<num_blocks,TPB>>>(d_integral, num_points);
+
+        cudaMemcpy(integral, d_integral, sizeof(float), cudaMemcpyDeviceToHost);
+        
+        clock_t end = clock();
+        double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
+        float error = *integral > 2.0 ? *integral - 2.0 : 2.0 - *integral;
+        
+        printf("Monte-Carlo, %.9f, %.9f,%d, %d,%.9f\n",error, *integral, num_blocks, num_points, time_spent);
+        
+        free(integral);
+        cudaFree(d_integral);
     }
-    */
     return 0;
 }
