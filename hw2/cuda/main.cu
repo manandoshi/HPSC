@@ -22,19 +22,19 @@ __device__ double atomicAdd_double(double* address, double val)
 }
 
 
-__global__ void trap(double *out, int *N) {
+__global__ void trap(double *out, int N) {
     int index = threadIdx.x + blockIdx.x*blockDim.x;
-    if(index>=*N){
+    if(index>=N){
         return;
     }
     __shared__ double temp[TPB];
 
-    temp[index] = sin(M_PI*(double)index/((double)*N-1));
+    temp[index] = sin(M_PI*(double)index/((double)N-1));
 
     __syncthreads();
     if(threadIdx.x == 0){
         double sum = 0;
-        for(int i = index; i< min(*N,index+TPB); i++){
+        for(int i = index; i< min(N,index+TPB); i++){
             sum += temp[i];
         }
         atomicAdd_double(out, sum);
@@ -58,12 +58,11 @@ int main(int argc, char** argv){
         double* d_integral;
         int* d_N;
 
-        cudaMalloc((void**)&d_N, sizeof(int));
         cudaMalloc((void**)&d_integral, sizeof(double));
         
         cudaMemcpy(d_N, &num_points, sizeof(int), cudaMemcpyHostToDevice);
 
-        trap<<<num_blocks,TPB>>>(d_integral, d_N);
+        trap<<<num_blocks,TPB>>>(d_integral, num_points);
 
         cudaMemcpy(&integral, d_integral, sizeof(double), cudaMemcpyDeviceToHost);
 
