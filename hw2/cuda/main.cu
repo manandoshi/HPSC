@@ -51,7 +51,7 @@ __global__ void trap(float *out, int N) {
     return;
 }
 
-__global__ void mc(float *out, int N) {
+__global__ void mc(float *out, int N, int seed) {
 
     __shared__ float temp[TPB];
 
@@ -63,7 +63,7 @@ __global__ void mc(float *out, int N) {
     }
     else{
         curandState_t state;
-        curand_init(blockIdx.x,
+        curand_init(blockIdx.x + seed,
                     threadIdx.x,
                     0,
                     &state);
@@ -106,7 +106,7 @@ int main(int argc, char** argv){
         double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
         float error = *integral > 2.0 ? *integral - 2.0 : 2.0 - *integral;
         
-        printf("Trapezoidal, %.9f, %.9f,%d, %d,%.9f\n",error, *integral, num_blocks, num_points, time_spent);
+        printf("Trapezoidal, %.12f, %.12f,%d, %d,%.12f\n",error, *integral, num_blocks, num_points, time_spent);
         
         free(integral);
         cudaFree(d_integral);
@@ -121,7 +121,7 @@ int main(int argc, char** argv){
         cudaMalloc((void**)&d_integral, sizeof(float));
         integral = (float *)malloc(sizeof(float));
 
-        mc<<<num_blocks,TPB>>>(d_integral, num_points);
+        mc<<<num_blocks,TPB>>>(d_integral, num_points, time(NULL));
 
         cudaMemcpy(integral, d_integral, sizeof(float), cudaMemcpyDeviceToHost);
         
@@ -129,7 +129,7 @@ int main(int argc, char** argv){
         double time_spent = (double)(end-begin)/CLOCKS_PER_SEC;
         float error = *integral > 2.0 ? *integral - 2.0 : 2.0 - *integral;
         
-        printf("Monte-Carlo, %.9f, %.9f,%d, %d,%.9f\n",error, *integral, num_blocks, num_points, time_spent);
+        printf("Monte-Carlo, %.12f, %.12f,%d, %d,%.12f\n",error, *integral, num_blocks, num_points, time_spent);
         
         free(integral);
         cudaFree(d_integral);
