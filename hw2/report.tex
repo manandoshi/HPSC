@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\title{Assignment 1: HPSC}
+\author{Manan Doshi}
+\date{5 March 2018}
+\usepackage{graphicx}
+
+\begin{document}
+\graphicspath{{/}}
+\maketitle
+
+\section{Introduction}
+In this assignment, we evaluate the performance on Monte Carlo method and the Trapezoidal rule to evaluate \(\int_{0}^{1} \sin x \, dx \). The code for evaluating the integral via both methods lives in \texttt{utility.c}. Timing is done using the built-in time methods in \texttt{C}. \texttt{main.c} is the wrapper program to time and evaluate integrals using either of the methods in parallel.\\
+
+Usage: \verb|./main method num_points|\\
+Example: \verb|./main `T' 21000|\\
+
+
+\section{CUDA: Convergence Study}
+The following plots show the absolute error of both the methods with increasing number of points. It can be clearly seen that both the methods converge to the actual value of the integral(2.00). The Monte Carlo method is more `erratic' in it's convergence because of the stochasticity involved.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.5]{conv_cuda}
+\end{figure}
+
+\newpage
+\section{CUDA: Timing Study}
+
+Following are the plots of the time taken for the code to run using various number of threads on the GPU. The GPU gives a brilliant time on a huge number of parallel threads when doing the Monte-Carlo integration.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.5]{timing_cuda}
+\end{figure}
+
+\newpage
+\section{MPI: Convergence Study}
+The following plots show the absolute error of both the methods with increasing number of points. It can be clearly seen that both the methods converge to the actual value of the integral(2.00). The Monte Carlo method is more `erratic' in it's convergence because of the stochasticity involved.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.5]{conv_mpi}
+\end{figure}
+
+\section{MPI: Timing Study}
+
+Following are the plots of the time taken for the code to run using various number of threads on the CPU. The CPU used is quad core.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.5]{timing_mpi}
+\end{figure}
+\end{document}
